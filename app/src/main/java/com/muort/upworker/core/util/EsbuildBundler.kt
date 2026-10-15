@@ -68,7 +68,7 @@ class EsbuildBundler @Inject constructor(
     companion object {
         private const val TAG = "EsbuildBundler"
         private const val ESBUILD_DIR = "esbuild"
-        private const val NPM_REGISTRY = "https://registry.npmjs.org/esbuild-wasm/latest"
+        private const val NPM_REGISTRY = "https://registry.npmjs.org/esbuild-wasm/0.25.0"
     }
 
     // 动态版本号，首次下载时从 npm registry 获取
