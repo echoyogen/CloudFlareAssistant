@@ -7,7 +7,6 @@ import javax.inject.Inject
 
 class LogOkHttpInterceptor @Inject constructor() : Interceptor {
     companion object {
-        private const val MAX_BODY_LOG_BYTES = 1024 * 1024L
         private val SENSITIVE_HEADERS = setOf(
             "authorization",
             "x-auth-email",
@@ -37,24 +36,9 @@ class LogOkHttpInterceptor @Inject constructor() : Interceptor {
             append("URL: ${request.url}\n")
             append("Method: ${request.method}\n")
             request.headers.forEach { append("Header: ${it.first}: ${redactHeaderValue(it.first, it.second)}\n") }
-            request.body?.let { body ->
-                val contentLength = body.contentLength()
-                when {
-                    contentLength in 0..MAX_BODY_LOG_BYTES -> {
-                        val buffer = okio.Buffer()
-                        body.writeTo(buffer)
-                        val bodyStr = buffer.readUtf8()
-                        if (bodyStr.isNotEmpty()) {
-                            append("Body: $bodyStr\n")
-                        }
-                    }
-                    contentLength > MAX_BODY_LOG_BYTES -> {
-                        append("Body: [skipped ${contentLength} bytes, too large]\n")
-                    }
-                    else -> {
-                        append("Body: [size unknown, skipped]\n")
-                    }
-                }
+            if (request.body != null) {
+                // 请求正文可能包含 API Token、R2 密钥等，日志中永不记录正文。
+                append("Body: [redacted]\n")
             }
         }
         LogRepository.appendLog(requestLog)
@@ -71,8 +55,8 @@ class LogOkHttpInterceptor @Inject constructor() : Interceptor {
             append("URL: ${response.request.url}\n")
             append("Code: ${response.code}\n")
             response.headers.forEach { append("Header: ${it.first}: ${redactHeaderValue(it.first, it.second)}\n") }
-            val peeked = response.peekBody(MAX_BODY_LOG_BYTES)
-            append("Body: ${peeked.string()}\n")
+            // 响应正文可能包含新建密钥等敏感信息，日志中永不记录正文。
+            append("Body: [redacted]\n")
         }
         LogRepository.appendLog(responseLog)
         return response
